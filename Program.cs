@@ -19,7 +19,7 @@ ARTICLE 2      30.00
 TOTAL          50.00
 VAT 25%        12.50
 
- DAMN I NEED A LIFE
+\x{WIDE} DAMN I NEED A LIFE
          :)
 
 Thanks for shopping
@@ -28,9 +28,17 @@ Thanks for shopping
 S:1  T:2 C:22 R:9999";
             Console.WriteLine("Converting\r\n======================");
             var rows = text.Split(new string[] { "\r\n" }, StringSplitOptions.None);
-            foreach (string row in rows) Console.WriteLine(row);
-            Console.WriteLine("======================\r\nto an image and base64 encoded string...");
-            using (Bitmap bitmap = ConvertToImage(text))
+            var receiptWithoutFormatting = string.Empty;
+            var builder = new System.Text.StringBuilder();
+            builder.Append(receiptWithoutFormatting);
+            foreach (string row in rows)
+            {
+                Console.WriteLine(row);
+                builder.Append(RemoveEscapeSequences(row) + "\r\n");
+            }
+            receiptWithoutFormatting = builder.ToString().TrimEnd(new char[] { '\r', '\n' });
+            Console.WriteLine("======================\r\nto an image and base64 encoded string\r\nafter stripping escape sequences...");
+            using (Bitmap bitmap = ConvertToImage(receiptWithoutFormatting))
             {
                 var stream = new MemoryStream();
                 bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
@@ -62,6 +70,16 @@ S:1  T:2 C:22 R:9999";
                 }
             }
             return bitmap;
+        }
+
+        private static string RemoveEscapeSequences(string text)
+        {
+            var escapeStart = text.IndexOf(@"\x");
+            if (escapeStart == -1)
+                return text;
+            var escapeEnd = text.LastIndexOf('}') + 1;
+            var escapeString = text.Substring(escapeStart, escapeEnd);
+            return text.Replace(escapeString, "");
         }
     }
 }
